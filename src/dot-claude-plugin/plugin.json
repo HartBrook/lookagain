@@ -1,0 +1,11 @@
+{
+  "name": "lookagain",
+  "version": "0.1.0",
+  "description": "Sequential code review with fresh agent contexts. Runs multiple independent review passes to catch more issues.",
+  "author": "HartBrook",
+  "repository": "https://github.com/HartBrook/lookagain",
+  "keywords": ["code-review", "quality", "iterative", "multi-pass"],
+  "commands": ["lookagain"],
+  "agents": ["lookagain-reviewer"],
+  "skills": ["lookagain-output-format"]
+}

@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate tag matches plugin version
+        run: |
+          tag_version="${GITHUB_REF#refs/tags/v}"
+          plugin_version=$(python3 -c "import json; print(json.load(open('src/dot-claude-plugin/plugin.json'))['version'])")
+
+          if [[ "$tag_version" != "$plugin_version" ]]; then
+            echo "Error: Tag version ($tag_version) does not match plugin.json version ($plugin_version)"
+            exit 1
+          fi
+
+          echo "Version $plugin_version validated"
+
+      - name: Build package
+        run: |
+          chmod +x scripts/package.sh
+          ./scripts/package.sh
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          version="${GITHUB_REF#refs/tags/v}"
+
+          # Extract the section for this version from CHANGELOG.md
+          # Looks for ## [version] and captures until the next ## or end of file
+          changelog=$(awk "/^## \[$version\]/{found=1; next} /^## \[/{found=0} found" CHANGELOG.md)
+
+          if [[ -z "$changelog" ]]; then
+            changelog="Release $version"
+          fi
+
+          # Write to file to preserve newlines
+          echo "$changelog" > release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          files: dist/lookagain-v*.zip
+          fail_on_unmatched_files: true
