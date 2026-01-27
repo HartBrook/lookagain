@@ -101,7 +101,7 @@ jobs:
             exit 1
           fi
 
-          if [[ ! -f dist/lookagain-v*.zip ]]; then
+          if ! ls dist/lookagain-v*.zip 1>/dev/null 2>&1; then
             echo "Error: zip archive not created"
             exit 1
           fi
