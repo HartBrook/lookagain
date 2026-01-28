@@ -10,7 +10,7 @@ A single code review pass catches ~60-70% of issues. Running multiple independen
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   /lookagain                        │
+│                   /look:again                       │
 │                                                     │
 │   ┌───────────────────────────────────────────┐    │
 │   │          Orchestrator (main agent)         │    │
@@ -45,19 +45,19 @@ A single code review pass catches ~60-70% of issues. Running multiple independen
 
 ```bash
 # Basic: 3 review passes with auto-fix for must_fix issues
-/lookagain
+/look:again
 
 # More passes for critical code
-/lookagain passes=5
+/look:again passes=5
 
 # Review specific directory
-/lookagain target=src/auth
+/look:again target=src/auth
 
 # Disable auto-fix (review only)
-/lookagain auto-fix=false
+/look:again auto-fix=false
 
 # Increase max passes for stubborn issues
-/lookagain passes=3 max-passes=10
+/look:again passes=3 max-passes=10
 ```
 
 ## How It Works
