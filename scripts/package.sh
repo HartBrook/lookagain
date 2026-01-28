@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DIST_DIR="$PROJECT_ROOT/dist"
 
 # Get version from plugin.json
-VERSION=$(grep -o '"version": *"[^"]*"' "$PROJECT_ROOT/src/dot-claude-plugin/plugin.json" | cut -d'"' -f4)
+VERSION=$(python3 -c "import json; print(json.load(open('$PROJECT_ROOT/src/dot-claude-plugin/plugin.json'))['version'])")
 
 if [[ -z "$VERSION" ]]; then
     echo "Error: Could not extract version from plugin.json"
@@ -35,8 +35,7 @@ cp "$PROJECT_ROOT/LICENSE" "$DIST_DIR/lookagain/"
 cp "$PROJECT_ROOT/CHANGELOG.md" "$DIST_DIR/lookagain/"
 
 # Create zip archive
-cd "$DIST_DIR"
-zip -r "lookagain-v$VERSION.zip" lookagain
+(cd "$DIST_DIR" && zip -r "lookagain-v$VERSION.zip" lookagain)
 
 echo ""
 echo "Build complete:"
