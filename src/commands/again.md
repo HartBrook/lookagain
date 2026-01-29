@@ -1,45 +1,53 @@
 ---
 name: again
 description: Run sequential code review passes with fresh contexts to catch more issues
-arguments:
-  - name: passes
-    description: Number of review passes to run
-    default: "3"
-  - name: target
-    description: "What to review: staged, commit, branch, or a file/directory path"
-    default: "staged"
-  - name: auto-fix
-    description: Automatically fix must_fix issues between passes (true/false)
-    default: "true"
-  - name: model
-    description: "Reviewer model: fast (haiku), balanced (sonnet), thorough (inherit)"
-    default: "thorough"
-  - name: max-passes
-    description: Maximum passes if must_fix issues persist
-    default: "7"
+argument-hint: "[key=value ...]"
 ---
 
 # Iterative Code Review
 
 You orchestrate sequential, multi-pass code review. Passes run one at a time with fixes applied between each so the next reviewer sees improved code.
 
-## Configuration
-
-- **Passes**: $ARGUMENTS.passes
-- **Target**: $ARGUMENTS.target
-- **Auto-fix**: $ARGUMENTS.auto-fix
-- **Model**: $ARGUMENTS.model
-- **Max passes**: $ARGUMENTS.max-passes
-
 ## Phase 0: Setup
 
-1. Generate a run ID: `YYYY-MM-DDTHH-MM-SS`. All output goes under `.lookagain/<run-id>/`.
-2. Do NOT read the codebase yourself. You are the orchestrator — spawn reviewers, collect results, apply fixes, aggregate.
-3. Create a TodoWrite list with one item per pass plus aggregation. Mark items `in_progress` when starting and `completed` when done.
+### Parse arguments
+
+The user may pass key=value pairs after the command name. The raw argument string is:
+
+> $ARGUMENTS
+
+If the argument string is empty or blank, the user provided no overrides — use all defaults. Parse `key=value` pairs from the string. For any key not provided, use the default.
+
+| Key | Default | Description |
+|---|---|---|
+| `passes` | `3` | Number of review passes to run |
+| `target` | `staged` | What to review: `staged`, `commit`, `branch`, or a file/directory path |
+| `auto-fix` | `true` | Automatically fix must_fix issues between passes (`true` or `false`) |
+| `model` | `thorough` | Reviewer model: `fast` (haiku), `balanced` (sonnet), `thorough` (inherit) |
+| `max-passes` | `7` | Maximum passes if must_fix issues persist |
+
+**Log the resolved configuration** so it is visible in the output:
+
+```
+Configuration:
+  passes:     <resolved value>
+  target:     <resolved value>
+  auto-fix:   <resolved value>
+  model:      <resolved value>
+  max-passes: <resolved value>
+```
+
+### Generate run ID
+
+Generate a run ID: `YYYY-MM-DDTHH-MM-SS`. All output goes under `.lookagain/<run-id>/`.
+
+### Orchestrator role
+
+Do NOT read the codebase yourself. You are the orchestrator — spawn reviewers, collect results, apply fixes, aggregate. Create a TodoWrite list with one item per pass plus aggregation. Mark items `in_progress` when starting and `completed` when done.
 
 ### Resolve scope
 
-Determine the scope instruction to pass to each reviewer:
+Using the resolved `target` value, determine the scope instruction to pass to each reviewer:
 
 | Target value | Scope instruction for reviewer |
 |---|---|
@@ -50,7 +58,7 @@ Determine the scope instruction to pass to each reviewer:
 
 ### Resolve model
 
-Map the model argument to the Task tool model parameter:
+Using the resolved `model` value, map to the Task tool model parameter:
 
 | Model value | Task model |
 |---|---|
@@ -62,17 +70,17 @@ Map the model argument to the Task tool model parameter:
 
 CRITICAL: Passes run in sequence, NOT in parallel. Each pass reviews code after previous fixes.
 
-For each pass (1 through $ARGUMENTS.passes):
+For each pass (1 through the resolved `passes` value):
 
 **Review**: Spawn a fresh subagent via the Task tool using the `lookagain-reviewer` agent. Include: pass number, scope instruction, and instruction to use the `lookagain-output-format` skill. Set the model parameter based on the resolved model. Do NOT include findings from previous passes.
 
 **Collect**: Parse the JSON response. Store findings and track which pass found each issue.
 
-**Fix**: If `$ARGUMENTS.auto-fix` is `true`, apply fixes for `must_fix` issues only. Minimal changes, no refactoring.
+**Fix**: If the resolved `auto-fix` value is `true`, apply fixes for `must_fix` issues only. Minimal changes, no refactoring. If `auto-fix` is `false`, skip this step entirely — do not apply any fixes.
 
 **Log**: "Pass N complete. Found X must_fix, Y should_fix, Z suggestions."
 
-After completing $ARGUMENTS.passes passes, if `must_fix` issues remain and total passes < $ARGUMENTS.max-passes, run additional passes.
+After completing the configured number of passes, if `must_fix` issues remain and total passes < the resolved `max-passes` value, run additional passes.
 
 ## Phase 2: Aggregate
 
@@ -122,6 +130,6 @@ Include the count of previous runs (glob `.lookagain/????-??-??T??-??-??/`, subt
 1. **Sequential**: Never launch passes in parallel. Each must complete before the next starts.
 2. **Fresh context**: Always use the Task tool for subagents.
 3. **Independence**: Never tell subagents what previous passes found.
-4. **Minimal fixes**: Only change what's necessary when `$ARGUMENTS.auto-fix` is `true`.
+4. **Minimal fixes**: Only apply fixes when the resolved `auto-fix` value is `true`.
 5. **Valid JSON**: If subagent output fails to parse, log the error and continue.
-6. **Respect max-passes**: Never exceed $ARGUMENTS.max-passes.
+6. **Respect max-passes**: Never exceed the resolved `max-passes` value.

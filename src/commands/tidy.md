@@ -2,18 +2,25 @@
 name: tidy
 description: Remove old lookagain review runs, keeping today's results by default
 tools: Glob, Bash(rm -rf .lookagain/????-??-??T??-??-??)
-arguments:
-  - name: keep
-    description: "Keep runs from the last N days (default: 1)"
-    default: "1"
-  - name: all
-    description: "Remove all runs including today's (true/false)"
-    default: "false"
+argument-hint: "[key=value ...]"
 ---
 
 # Tidy Old Review Runs
 
 You are cleaning up old review results from `.lookagain/`.
+
+## Parse arguments
+
+The user may pass key=value pairs after the command name. The raw argument string is:
+
+> $ARGUMENTS
+
+If the argument string is empty or blank, the user provided no overrides — use all defaults. Parse `key=value` pairs from the string. For any key not provided, use the default.
+
+| Key | Default | Description |
+|---|---|---|
+| `keep` | `1` | Keep runs from the last N days |
+| `all` | `false` | Remove all runs including today's (`true` or `false`) |
 
 ## Process
 
@@ -22,8 +29,8 @@ You are cleaning up old review results from `.lookagain/`.
 2. If no run directories exist, tell the user there's nothing to tidy and stop.
 
 3. Determine which runs to remove:
-   - If `$ARGUMENTS.all` is `true`, remove ALL run directories.
-   - Otherwise, calculate the cutoff date by subtracting `$ARGUMENTS.keep` days from today's date. Remove only run directories whose date portion (the `YYYY-MM-DD` prefix of the directory name) is strictly before the cutoff date.
+   - If the resolved `all` value is `true`, remove ALL run directories.
+   - Otherwise, calculate the cutoff date by subtracting the resolved `keep` value (in days) from today's date. Remove only run directories whose date portion (the `YYYY-MM-DD` prefix of the directory name) is strictly before the cutoff date.
 
 4. Before deleting, validate each directory name matches the exact pattern `YYYY-MM-DDTHH-MM-SS` (all digits in the right positions). Skip any directory that doesn't match.
 
@@ -43,5 +50,5 @@ If nothing was removed, say so:
 ```
 ## Nothing to Tidy
 
-All N run(s) are within the last $ARGUMENTS.keep day(s).
+All N run(s) are within the keep window.
 ```

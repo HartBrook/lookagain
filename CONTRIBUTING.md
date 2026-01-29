@@ -67,7 +67,7 @@ make test
 make eval
 ```
 
-`make test` runs fast, offline checks that validate plugin structure: file existence, JSON validity, frontmatter fields, cross-references between manifests, and that all frontmatter arguments are referenced as `$ARGUMENTS.<name>` in the instruction body (not just in display sections).
+`make test` runs fast, offline checks that validate plugin structure: file existence, JSON validity, frontmatter fields, cross-references between manifests, and that commands accepting arguments use the correct pattern (`argument-hint` in frontmatter, `$ARGUMENTS` placeholder, and a defaults table in the body).
 
 `make eval` runs [promptfoo](https://promptfoo.dev) evals that send the interpolated prompts to Claude and assert on behavioral correctness. For example, it verifies that `auto-fix=false` causes the model to skip fixes, and that `passes=5` results in 5 planned passes.
 
@@ -120,9 +120,11 @@ You can also test the plugin through the marketplace install flow, which is clos
 
 When editing or adding command prompts in `src/commands/`:
 
-- Define arguments in the YAML frontmatter with `name`, `description`, and `default`.
-- Reference arguments in the instruction body using `$ARGUMENTS.<name>` — not just in display sections. The executing agent needs to see the interpolated value at the point where it makes decisions. For example, write `If $ARGUMENTS.auto-fix is true` rather than `If auto-fix is enabled`.
-- `make test` enforces that every frontmatter argument appears as `$ARGUMENTS.<name>` somewhere in the body. If you add an argument, the test will fail until you reference it.
+- **Use `$ARGUMENTS` for the raw string.** Claude Code replaces `$ARGUMENTS` with whatever the user typed after the command name. There is no `$ARGUMENTS.name` dot-access syntax — only `$ARGUMENTS` (whole string) and `$ARGUMENTS[N]` (positional). Do NOT use an `arguments:` array in frontmatter — it is not a supported Claude Code feature and will not be interpolated.
+- **Add `argument-hint`** in frontmatter to document expected input format (e.g., `argument-hint: "[key=value ...]"`).
+- **Include a defaults table** in the body listing each key, its default, and a description. Instruct the agent to parse `key=value` pairs from `$ARGUMENTS` and fall back to defaults for missing keys.
+- **Log the resolved configuration** so it is visible in output and reviewable in evals.
+- `make test` enforces that commands using `$ARGUMENTS` have `argument-hint` in frontmatter, a defaults table in the body, and do NOT use the unsupported `arguments:` frontmatter array.
 - After changing prompt logic, run `make eval` to verify models still interpret the arguments correctly.
 
 ## Pull Requests

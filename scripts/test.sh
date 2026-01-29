@@ -129,28 +129,20 @@ test_frontmatter() {
     check_frontmatter "$PROJECT_ROOT/src/skills/lookagain-output-format/SKILL.md" name description
 }
 
-test_argument_interpolation() {
-    # Verify that arguments defined in frontmatter are referenced using
-    # $ARGUMENTS.<name> syntax in the instruction body, not just in the
-    # Configuration display section. This prevents the executing agent
-    # from missing argument values and falling back to safe defaults.
+test_argument_handling() {
+    # Verify that command files using arguments follow the correct pattern:
+    # 1. Frontmatter has argument-hint (not the unsupported arguments: array)
+    # 2. Body contains $ARGUMENTS placeholder for the raw argument string
+    # 3. Body contains a defaults table with Key/Default columns
+    # This ensures the agent receives and parses arguments at runtime
+    # rather than relying on non-existent compile-time interpolation.
 
     for file in "$PROJECT_ROOT"/src/commands/*.md; do
         local relpath="${file#"$PROJECT_ROOT"/}"
 
-        # Extract argument names from frontmatter
-        local args
-        args=$(awk '
-            NR==1 && /^---$/ { in_fm=1; next }
-            in_fm && /^---$/ { exit }
-            in_fm && /^  - name: / { gsub(/^  - name: /, ""); print }
-        ' "$file")
+        local frontmatter
+        frontmatter=$(awk 'NR==1{next} /^---$/{exit} {print}' "$file")
 
-        if [[ -z "$args" ]]; then
-            continue
-        fi
-
-        # Extract the body (everything after the second ---)
         local body
         body=$(awk '
             NR==1 && /^---$/ { in_fm=1; next }
@@ -158,19 +150,30 @@ test_argument_interpolation() {
             !in_fm { print }
         ' "$file")
 
-        # For each argument, verify $ARGUMENTS.<name> appears in the body
-        local all_found=1
-        while IFS= read -r arg; do
-            local ref="\$ARGUMENTS.${arg}"
-            if ! echo "$body" | grep -qF "$ref"; then
-                fail "$relpath: argument '$arg' defined but \$ARGUMENTS.$arg never used in body"
-                all_found=0
-            fi
-        done <<< "$args"
-
-        if [[ $all_found -eq 1 ]]; then
-            pass "$relpath: all arguments interpolated in body"
+        # Skip commands that don't accept arguments
+        if ! echo "$body" | grep -qF '$ARGUMENTS'; then
+            continue
         fi
+
+        # Must NOT use the unsupported arguments: array in frontmatter
+        if echo "$frontmatter" | grep -q "^arguments:"; then
+            fail "$relpath: uses unsupported 'arguments:' frontmatter — use 'argument-hint:' and agent-side parsing instead"
+            continue
+        fi
+
+        # Must have argument-hint in frontmatter
+        if ! echo "$frontmatter" | grep -q "^argument-hint:"; then
+            fail "$relpath: missing 'argument-hint:' in frontmatter"
+            continue
+        fi
+
+        # Must have a defaults table (Key | Default header pattern)
+        if ! echo "$body" | grep -q "| Key | Default"; then
+            fail "$relpath: missing defaults table (expected '| Key | Default |' header)"
+            continue
+        fi
+
+        pass "$relpath: argument handling correct"
     done
 }
 
@@ -369,8 +372,8 @@ echo "--- frontmatter ---"
 test_frontmatter
 echo ""
 
-echo "--- argument interpolation ---"
-test_argument_interpolation
+echo "--- argument handling ---"
+test_argument_handling
 echo ""
 
 echo "--- cross-references ---"

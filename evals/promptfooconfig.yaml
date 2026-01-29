@@ -1,4 +1,4 @@
-description: "Behavioral evals for lookagain prompt interpolation"
+description: "Behavioral evals for lookagain argument handling"
 
 prompts:
   - file://prompt-loader.js
@@ -9,6 +9,22 @@ providers:
       max_tokens: 2048
 
 tests:
+  # ==================================================================
+  # again.md — no arguments (defaults)
+  # ==================================================================
+  - description: "no arguments → model uses all defaults (auto-fix=true, passes=3, thorough)"
+    vars:
+      prompt_file: src/commands/again.md
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must use default values for all settings since the
+          argument string is empty: 3 passes, staged target, auto-fix true,
+          thorough model, and max-passes 7. It must describe applying fixes
+          for must_fix issues (since auto-fix defaults to true). It should
+          NOT say arguments are missing or unavailable — an empty string
+          simply means the user wants all defaults.
+
   # ==================================================================
   # again.md — auto-fix interpretation
   # ==================================================================
@@ -115,6 +131,21 @@ tests:
           branch. It should reference branch comparison or merge-base.
 
   # ==================================================================
+  # again.md — partial arguments (only auto-fix specified)
+  # ==================================================================
+  - description: "only auto-fix=false → defaults for everything else, no fixing"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_auto-fix: "false"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must parse auto-fix=false from the argument string
+          and use defaults for all other settings (3 passes, staged target,
+          thorough model, max-passes 7). It must NOT apply any fixes since
+          auto-fix is explicitly false.
+
+  # ==================================================================
   # tidy.md — all flag
   # ==================================================================
   - description: "all=true → removes all runs"
@@ -139,3 +170,19 @@ tests:
           The response must describe calculating a cutoff date by subtracting
           3 days from today, and only removing runs older than that cutoff.
           It should keep runs from the last 3 days.
+
+  # ==================================================================
+  # tidy.md — no arguments (defaults)
+  # ==================================================================
+  - description: "tidy with no arguments → keep=1, all=false"
+    vars:
+      prompt_file: src/commands/tidy.md
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must use default values since the argument string is
+          empty: keep=1 (keep runs from the last 1 day) and all=false (do
+          NOT remove all runs). It should describe date-based filtering
+          with a 1-day retention window. An empty argument string means
+          the user wants all defaults — it should NOT say arguments are
+          missing or unavailable.

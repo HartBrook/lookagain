@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-28
+
+### Changed
+
+- **Breaking**: Replaced unsupported `arguments:` frontmatter array and `$ARGUMENTS.<name>` dot-access syntax with agent-side parsing of `$ARGUMENTS`. Claude Code only supports `$ARGUMENTS` (whole string) and `$ARGUMENTS[N]` (positional) — the named dot-access syntax was never interpolated, causing the agent to see literal placeholder text and fall back to safe defaults.
+- Commands now include a "Parse arguments" section with a defaults table. The agent parses `key=value` pairs from the raw `$ARGUMENTS` string and applies documented defaults for missing keys.
+- Commands log resolved configuration to make argument values visible and debuggable.
+- Frontmatter uses `argument-hint` (supported) instead of `arguments:` (unsupported).
+- Updated static tests to enforce the new pattern and reject the old `arguments:` frontmatter.
+- Updated behavioral evals with new test cases for empty arguments (defaults) and partial arguments.
+- Updated CONTRIBUTING.md prompt authoring guidance for the correct argument pattern.
+
 ## [0.2.1] - 2026-01-28
 
 ### Fixed
