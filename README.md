@@ -140,6 +140,16 @@ Previous runs are preserved. Use `/look:tidy` to prune old results:
 | should_fix | No          | Performance issues, poor error handling         |
 | suggestion | No          | Refactoring, documentation, style               |
 
+## Development
+
+```bash
+make test   # Structural validation (offline, fast)
+make eval   # Behavioral evals via promptfoo (requires ANTHROPIC_API_KEY)
+make dev    # Build and start Claude Code with the plugin loaded
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup and guidelines.
+
 ## License
 
 MIT

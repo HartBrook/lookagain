@@ -129,6 +129,51 @@ test_frontmatter() {
     check_frontmatter "$PROJECT_ROOT/src/skills/lookagain-output-format/SKILL.md" name description
 }
 
+test_argument_interpolation() {
+    # Verify that arguments defined in frontmatter are referenced using
+    # $ARGUMENTS.<name> syntax in the instruction body, not just in the
+    # Configuration display section. This prevents the executing agent
+    # from missing argument values and falling back to safe defaults.
+
+    for file in "$PROJECT_ROOT"/src/commands/*.md; do
+        local relpath="${file#"$PROJECT_ROOT"/}"
+
+        # Extract argument names from frontmatter
+        local args
+        args=$(awk '
+            NR==1 && /^---$/ { in_fm=1; next }
+            in_fm && /^---$/ { exit }
+            in_fm && /^  - name: / { gsub(/^  - name: /, ""); print }
+        ' "$file")
+
+        if [[ -z "$args" ]]; then
+            continue
+        fi
+
+        # Extract the body (everything after the second ---)
+        local body
+        body=$(awk '
+            NR==1 && /^---$/ { in_fm=1; next }
+            in_fm && /^---$/ { in_fm=0; next }
+            !in_fm { print }
+        ' "$file")
+
+        # For each argument, verify $ARGUMENTS.<name> appears in the body
+        local all_found=1
+        while IFS= read -r arg; do
+            local ref="\$ARGUMENTS.${arg}"
+            if ! echo "$body" | grep -qF "$ref"; then
+                fail "$relpath: argument '$arg' defined but \$ARGUMENTS.$arg never used in body"
+                all_found=0
+            fi
+        done <<< "$args"
+
+        if [[ $all_found -eq 1 ]]; then
+            pass "$relpath: all arguments interpolated in body"
+        fi
+    done
+}
+
 test_cross_references() {
     local pjson="$PROJECT_ROOT/src/dot-claude-plugin/plugin.json"
 
@@ -322,6 +367,10 @@ echo ""
 
 echo "--- frontmatter ---"
 test_frontmatter
+echo ""
+
+echo "--- argument interpolation ---"
+test_argument_interpolation
 echo ""
 
 echo "--- cross-references ---"
