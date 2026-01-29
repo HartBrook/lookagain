@@ -14,9 +14,12 @@
 
 ```
 lookagain/
+├── .claude-plugin/
+│   └── marketplace.json    # Marketplace manifest
 ├── src/
 │   ├── commands/           # Plugin commands
-│   │   └── again.md        # Main orchestrator
+│   │   ├── again.md        # Main orchestrator
+│   │   └── tidy.md         # Tidy old review runs
 │   ├── agents/             # Subagent definitions
 │   │   └── lookagain-reviewer.md
 │   ├── skills/             # Output format specs
@@ -50,6 +53,23 @@ make help
 
 `make dev` builds the plugin and starts a new Claude Code session with it loaded. Test with `/look:again`.
 
+### Testing via Marketplace (local)
+
+You can also test the plugin through the marketplace install flow, which is closer to what end users experience:
+
+```bash
+# First time: add the local marketplace
+/plugin marketplace add ./
+
+# Install the plugin
+/plugin install look@hartbrook-plugins
+
+# After making changes, reinstall to pick them up
+/plugin uninstall look@hartbrook-plugins
+/plugin marketplace update hartbrook-plugins
+/plugin install look@hartbrook-plugins
+```
+
 ### Making Changes
 
 1. Edit files in `src/`
@@ -63,6 +83,8 @@ make help
 - **[src/agents/lookagain-reviewer.md](src/agents/lookagain-reviewer.md)**: Reviewer subagent. Defines how individual review passes work.
 - **[src/skills/lookagain-output-format/SKILL.md](src/skills/lookagain-output-format/SKILL.md)**: JSON output format specification.
 - **[src/dot-claude-plugin/plugin.json](src/dot-claude-plugin/plugin.json)**: Plugin metadata and version.
+- **[src/commands/tidy.md](src/commands/tidy.md)**: Tidy command for pruning old review runs.
+- **[.claude-plugin/marketplace.json](.claude-plugin/marketplace.json)**: Marketplace manifest for plugin discovery and installation.
 
 ## Pull Requests
 
@@ -75,4 +97,4 @@ make help
 
 ## Versioning
 
-Update the version in `src/dot-claude-plugin/plugin.json` when making releases.
+Update the version in `src/dot-claude-plugin/plugin.json` when making releases. The marketplace entry in `.claude-plugin/marketplace.json` also has a `version` field — keep both in sync. The test suite (`make test`) validates that commands, agents, and skills match between the two files.

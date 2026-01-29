@@ -74,7 +74,7 @@ test_plugin_json() {
     local pjson="$PROJECT_ROOT/src/dot-claude-plugin/plugin.json"
 
     # Valid JSON
-    if python3 -c "import json; json.load(open('$pjson'))" 2>/dev/null; then
+    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$pjson" 2>/dev/null; then
         pass "plugin.json is valid JSON"
     else
         fail "plugin.json is not valid JSON"
@@ -89,9 +89,9 @@ test_plugin_json() {
     # Version matches semver
     if python3 -c "
 import json, re, sys
-v = json.load(open('$pjson'))['version']
+v = json.load(open(sys.argv[1]))['version']
 sys.exit(0 if re.match(r'^\d+\.\d+\.\d+$', v) else 1)
-" 2>/dev/null; then
+" "$pjson" 2>/dev/null; then
         pass "version is valid semver"
     else
         fail "version is not valid semver"
@@ -100,9 +100,9 @@ sys.exit(0 if re.match(r'^\d+\.\d+\.\d+$', v) else 1)
     # Author has name
     if python3 -c "
 import json, sys
-d = json.load(open('$pjson'))
+d = json.load(open(sys.argv[1]))
 sys.exit(0 if isinstance(d.get('author'), dict) and 'name' in d['author'] else 1)
-" 2>/dev/null; then
+" "$pjson" 2>/dev/null; then
         pass "author.name present"
     else
         fail "author must be an object with name field"
@@ -112,9 +112,11 @@ sys.exit(0 if isinstance(d.get('author'), dict) and 'name' in d['author'] else 1
 test_required_files() {
     check_file "src/dot-claude-plugin/plugin.json"
     check_file "src/commands/again.md"
+    check_file "src/commands/tidy.md"
     check_file "src/agents/lookagain-reviewer.md"
     check_file "src/skills/lookagain-output-format/SKILL.md"
     check_file "src/dot-claude/settings.local.json"
+    check_file ".claude-plugin/marketplace.json"
     check_file "README.md"
     check_file "LICENSE"
     check_file "CHANGELOG.md"
@@ -122,6 +124,7 @@ test_required_files() {
 
 test_frontmatter() {
     check_frontmatter "$PROJECT_ROOT/src/commands/again.md" name description
+    check_frontmatter "$PROJECT_ROOT/src/commands/tidy.md" name description
     check_frontmatter "$PROJECT_ROOT/src/agents/lookagain-reviewer.md" name description tools
     check_frontmatter "$PROJECT_ROOT/src/skills/lookagain-output-format/SKILL.md" name description
 }
@@ -137,7 +140,7 @@ test_cross_references() {
         else
             fail "command $cmd not found at src/${cmd#./}"
         fi
-    done < <(python3 -c "import json; [print(c) for c in json.load(open('$pjson')).get('commands', [])]")
+    done < <(python3 -c "import json,sys; [print(c) for c in json.load(open(sys.argv[1])).get('commands', [])]" "$pjson")
 
     # Agents resolve
     while IFS= read -r agent; do
@@ -147,7 +150,7 @@ test_cross_references() {
         else
             fail "agent $agent not found at src/${agent#./}"
         fi
-    done < <(python3 -c "import json; [print(a) for a in json.load(open('$pjson')).get('agents', [])]")
+    done < <(python3 -c "import json,sys; [print(a) for a in json.load(open(sys.argv[1])).get('agents', [])]" "$pjson")
 
     # Skills resolve with SKILL.md
     while IFS= read -r skill; do
@@ -157,7 +160,7 @@ test_cross_references() {
         else
             fail "skill $skill not found or missing SKILL.md"
         fi
-    done < <(python3 -c "import json; [print(s) for s in json.load(open('$pjson')).get('skills', [])]")
+    done < <(python3 -c "import json,sys; [print(s) for s in json.load(open(sys.argv[1])).get('skills', [])]" "$pjson")
 }
 
 test_build() {
@@ -180,13 +183,19 @@ test_build() {
         fail "dist/.claude-plugin/ missing"
     fi
 
-    if python3 -c "import json; json.load(open('$dist/.claude-plugin/plugin.json'))" 2>/dev/null; then
+    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$dist/.claude-plugin/plugin.json" 2>/dev/null; then
         pass "dist plugin.json is valid JSON"
     else
         fail "dist plugin.json is invalid"
     fi
 
-    for f in commands/again.md agents/lookagain-reviewer.md skills/lookagain-output-format/SKILL.md README.md; do
+    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$dist/.claude-plugin/marketplace.json" 2>/dev/null; then
+        pass "dist marketplace.json is valid JSON"
+    else
+        fail "dist marketplace.json is invalid"
+    fi
+
+    for f in commands/again.md commands/tidy.md agents/lookagain-reviewer.md skills/lookagain-output-format/SKILL.md README.md; do
         if [[ -f "$dist/$f" ]]; then
             pass "dist/$f exists"
         else
@@ -196,7 +205,7 @@ test_build() {
 
     # Zip exists with correct version
     local version
-    version=$(python3 -c "import json; print(json.load(open('$PROJECT_ROOT/src/dot-claude-plugin/plugin.json'))['version'])")
+    version=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['version'])" "$PROJECT_ROOT/src/dot-claude-plugin/plugin.json")
     if [[ -f "$PROJECT_ROOT/dist/lookagain-v${version}.zip" ]]; then
         pass "zip archive lookagain-v${version}.zip exists"
     else
@@ -207,7 +216,7 @@ test_build() {
 test_settings() {
     local settings="$PROJECT_ROOT/src/dot-claude/settings.local.json"
 
-    if python3 -c "import json; json.load(open('$settings'))" 2>/dev/null; then
+    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$settings" 2>/dev/null; then
         pass "settings.local.json is valid JSON"
     else
         fail "settings.local.json is not valid JSON"
@@ -216,13 +225,84 @@ test_settings() {
 
     if python3 -c "
 import json, sys
-d = json.load(open('$settings'))
+d = json.load(open(sys.argv[1]))
 sys.exit(0 if isinstance(d.get('permissions', {}).get('allow'), list) else 1)
-" 2>/dev/null; then
+" "$settings" 2>/dev/null; then
         pass "permissions.allow is an array"
     else
         fail "permissions.allow missing or not an array"
     fi
+}
+
+test_marketplace() {
+    local mjson="$PROJECT_ROOT/.claude-plugin/marketplace.json"
+
+    # Valid JSON
+    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$mjson" 2>/dev/null; then
+        pass "marketplace.json is valid JSON"
+    else
+        fail "marketplace.json is not valid JSON"
+        return
+    fi
+
+    # Required fields
+    for field in name owner plugins; do
+        check_json_field "$mjson" "$field"
+    done
+
+    # Owner has name
+    if python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if isinstance(d.get('owner'), dict) and 'name' in d['owner'] else 1)
+" "$mjson" 2>/dev/null; then
+        pass "owner.name present"
+    else
+        fail "owner must be an object with name field"
+    fi
+
+    # Each plugin has name and source
+    if python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+plugins = d.get('plugins', [])
+if not plugins:
+    sys.exit(1)
+for p in plugins:
+    if 'name' not in p or 'source' not in p:
+        sys.exit(1)
+" "$mjson" 2>/dev/null; then
+        pass "all plugins have name and source"
+    else
+        fail "plugins must each have name and source"
+    fi
+
+    # Version matches plugin.json
+    local pjson="$PROJECT_ROOT/src/dot-claude-plugin/plugin.json"
+    if python3 -c "
+import json, sys
+pv = json.load(open(sys.argv[1]))['version']
+mv = json.load(open(sys.argv[2]))['plugins'][0].get('version', '')
+sys.exit(0 if pv == mv else 1)
+" "$pjson" "$mjson" 2>/dev/null; then
+        pass "version in sync between plugin.json and marketplace.json"
+    else
+        fail "version mismatch between plugin.json and marketplace.json"
+    fi
+
+    # Commands, agents, skills match plugin.json
+    for field in commands agents skills; do
+        if python3 -c "
+import json, sys
+p = sorted(json.load(open(sys.argv[1])).get(sys.argv[3], []))
+m = sorted(json.load(open(sys.argv[2]))['plugins'][0].get(sys.argv[3], []))
+sys.exit(0 if p == m else 1)
+" "$pjson" "$mjson" "$field" 2>/dev/null; then
+            pass "$field in sync between plugin.json and marketplace.json"
+        else
+            fail "$field mismatch between plugin.json and marketplace.json"
+        fi
+    done
 }
 
 # ============================================================
@@ -250,6 +330,10 @@ echo ""
 
 echo "--- settings ---"
 test_settings
+echo ""
+
+echo "--- marketplace ---"
+test_marketplace
 echo ""
 
 echo "--- build ---"
