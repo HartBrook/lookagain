@@ -11,14 +11,13 @@
       "name": "look",
       "source": "./src",
       "description": "Sequential code review with fresh agent contexts. Runs multiple independent review passes to catch more issues.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "author": { "name": "HartBrook" },
       "repository": "https://github.com/HartBrook/lookagain",
       "license": "MIT",
       "keywords": ["code-review", "quality", "iterative", "multi-pass"],
-      "commands": ["./commands/again.md", "./commands/tidy.md"],
       "agents": ["./agents/lookagain-reviewer.md"],
-      "skills": ["./skills/lookagain-output-format"],
+      "skills": ["./skills/again", "./skills/tidy", "./skills/lookagain-output-format"],
       "strict": false
     }
   ]

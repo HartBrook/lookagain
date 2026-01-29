@@ -1,6 +1,7 @@
 ---
 name: again
 description: Run sequential code review passes with fresh contexts to catch more issues
+disable-model-invocation: true
 argument-hint: "[key=value ...]"
 ---
 

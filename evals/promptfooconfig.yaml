@@ -10,11 +10,11 @@ providers:
 
 tests:
   # ==================================================================
-  # again.md — no arguments (defaults)
+  # again — no arguments (defaults)
   # ==================================================================
   - description: "no arguments → model uses all defaults (auto-fix=true, passes=3, thorough)"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
     assert:
       - type: llm-rubric
         value: >
@@ -26,11 +26,11 @@ tests:
           simply means the user wants all defaults.
 
   # ==================================================================
-  # again.md — auto-fix interpretation
+  # again — auto-fix interpretation
   # ==================================================================
   - description: "auto-fix=true → model plans to apply fixes"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -45,7 +45,7 @@ tests:
 
   - description: "auto-fix=false → model skips fixes"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "false"
@@ -59,11 +59,11 @@ tests:
           It should not describe applying any code fixes.
 
   # ==================================================================
-  # again.md — passes count
+  # again — passes count
   # ==================================================================
   - description: "passes=5 → model plans exactly 5 initial passes"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "5"
       arg_target: staged
       arg_auto-fix: "true"
@@ -79,11 +79,11 @@ tests:
           5 sequential passes before considering additional passes.
 
   # ==================================================================
-  # again.md — model resolution
+  # again — model resolution
   # ==================================================================
   - description: "model=fast → reviewer uses haiku"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -99,7 +99,7 @@ tests:
 
   - description: "model=thorough → no explicit model override"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -113,11 +113,11 @@ tests:
           current model). It should NOT set the model to haiku or sonnet.
 
   # ==================================================================
-  # again.md — scope resolution
+  # again — scope resolution
   # ==================================================================
   - description: "target=branch → branch-based diff scope"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_passes: "3"
       arg_target: branch
       arg_auto-fix: "true"
@@ -131,11 +131,11 @@ tests:
           branch. It should reference branch comparison or merge-base.
 
   # ==================================================================
-  # again.md — partial arguments (only auto-fix specified)
+  # again — partial arguments (only auto-fix specified)
   # ==================================================================
   - description: "only auto-fix=false → defaults for everything else, no fixing"
     vars:
-      prompt_file: src/commands/again.md
+      prompt_file: src/skills/again/SKILL.md
       arg_auto-fix: "false"
     assert:
       - type: llm-rubric
@@ -146,11 +146,11 @@ tests:
           auto-fix is explicitly false.
 
   # ==================================================================
-  # tidy.md — all flag
+  # tidy — all flag
   # ==================================================================
   - description: "all=true → removes all runs"
     vars:
-      prompt_file: src/commands/tidy.md
+      prompt_file: src/skills/tidy/SKILL.md
       arg_keep: "1"
       arg_all: "true"
     assert:
@@ -161,7 +161,7 @@ tests:
 
   - description: "all=false, keep=3 → date-based retention"
     vars:
-      prompt_file: src/commands/tidy.md
+      prompt_file: src/skills/tidy/SKILL.md
       arg_keep: "3"
       arg_all: "false"
     assert:
@@ -172,11 +172,11 @@ tests:
           It should keep runs from the last 3 days.
 
   # ==================================================================
-  # tidy.md — no arguments (defaults)
+  # tidy — no arguments (defaults)
   # ==================================================================
   - description: "tidy with no arguments → keep=1, all=false"
     vars:
-      prompt_file: src/commands/tidy.md
+      prompt_file: src/skills/tidy/SKILL.md
     assert:
       - type: llm-rubric
         value: >

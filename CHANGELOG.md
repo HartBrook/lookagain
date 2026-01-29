@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-29
+
+### Changed
+
+- Migrated commands from `commands/` directory to `skills/` directory format (`SKILL.md` files) to fix CLI command resolution issues on newer Claude Code versions. See [GSD plugin issue #218](https://github.com/glittercowboy/get-shit-done/issues/218) for background.
+- Added `disable-model-invocation: true` to `/look:again` and `/look:tidy` to prevent unintended auto-invocation.
+- Renamed frontmatter field `tools` to `allowed-tools` per skills format.
+- Updated test suite, build script, evals, and documentation to reflect new file layout.
+- No changes to user-facing command names: `/look:again` and `/look:tidy` work as before.
+
 ## [0.3.0] - 2026-01-28
 
 ### Changed

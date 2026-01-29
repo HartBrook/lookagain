@@ -140,15 +140,26 @@ Previous runs are preserved. Use `/look:tidy` to prune old results:
 | should_fix | No          | Performance issues, poor error handling         |
 | suggestion | No          | Refactoring, documentation, style               |
 
+## Updating
+
+To update to the latest version:
+
+```bash
+/plugin marketplace update hartbrook-plugins
+/plugin uninstall look@hartbrook-plugins
+/plugin install look@hartbrook-plugins
+```
+
 ## Development
 
 ```bash
-make test   # Structural validation (offline, fast)
-make eval   # Behavioral evals via promptfoo (requires ANTHROPIC_API_KEY)
-make dev    # Build and start Claude Code with the plugin loaded
+make test          # Structural validation (offline, fast)
+make eval          # Behavioral evals via promptfoo (requires ANTHROPIC_API_KEY)
+make integration   # End-to-end integration test (requires ANTHROPIC_API_KEY)
+make dev           # Build and start Claude Code with the plugin loaded
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup and guidelines.
+Run `make test` before every commit (free, offline). Run `make eval` after changing prompt wording or argument handling. Run `make integration` after changes to the review pipeline or output format. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on what each layer catches.
 
 ## License
 

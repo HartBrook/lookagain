@@ -18,6 +18,9 @@ dev: build ## Build and start Claude Code with plugin loaded
 eval: ## Run behavioral evals (requires ANTHROPIC_API_KEY)
 	@npx promptfoo@latest eval -c evals/promptfooconfig.yaml
 
+integration: build ## Run integration test (requires ANTHROPIC_API_KEY)
+	@./scripts/integration-test.sh
+
 clean: ## Remove build artifacts
 	@rm -rf dist/
 	@echo "Cleaned dist/"
