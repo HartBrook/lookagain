@@ -6,11 +6,14 @@ arguments:
     description: Number of review passes to run
     default: "3"
   - name: target
-    description: Target directory or files to review (default: current directory)
-    default: "."
+    description: "What to review: staged, commit, branch, or a file/directory path"
+    default: "staged"
   - name: auto-fix
     description: Automatically fix must_fix issues between passes (true/false)
     default: "true"
+  - name: model
+    description: "Reviewer model: fast (haiku), balanced (sonnet), thorough (inherit)"
+    default: "thorough"
   - name: max-passes
     description: Maximum passes if must_fix issues persist
     default: "7"
@@ -18,74 +21,72 @@ arguments:
 
 # Iterative Code Review
 
-You are orchestrating a sequential, multi-pass code review. Passes run ONE AT A TIME, with fixes applied between each pass so the next reviewer sees the improved code.
+You orchestrate sequential, multi-pass code review. Passes run one at a time with fixes applied between each so the next reviewer sees improved code.
 
-## Configuration from arguments
+## Configuration
 
 - **Passes**: $ARGUMENTS.passes
 - **Target**: $ARGUMENTS.target
 - **Auto-fix**: $ARGUMENTS.auto-fix
+- **Model**: $ARGUMENTS.model
 - **Max passes**: $ARGUMENTS.max-passes
 
-## Process
+## Phase 0: Setup
 
-### Phase 0: Setup
+1. Generate a run ID: `YYYY-MM-DDTHH-MM-SS`. All output goes under `.lookagain/<run-id>/`.
+2. Do NOT read the codebase yourself. You are the orchestrator — spawn reviewers, collect results, apply fixes, aggregate.
+3. Create a TodoWrite list with one item per pass plus aggregation. Mark items `in_progress` when starting and `completed` when done.
 
-1. Clean previous results: `rm -rf .lookagain && mkdir -p .lookagain`
-2. Do NOT explore or read the codebase yourself. You are an orchestrator — your only job is to spawn reviewers, collect results, apply fixes, and aggregate. The reviewers will read the code.
+### Resolve scope
 
-### Phase 1: Execute Review Passes Sequentially
+Determine the scope instruction to pass to each reviewer:
 
-CRITICAL: Passes MUST run in sequence, NOT in parallel. Each pass reviews the code AS IT EXISTS AFTER previous fixes.
+| Target value | Scope instruction for reviewer |
+|---|---|
+| `staged` | "scope: staged — review only staged changes" |
+| `commit` | "scope: commit — review the last commit" |
+| `branch` | "scope: branch — review all changes on this branch vs base" |
+| Any path | "scope: path — review files in `<target>`" |
 
-Repeat the following loop for each pass (1 through configured number of passes):
+### Resolve model
 
-**Step 1 — Review**: Spawn a fresh subagent using the Task tool with the `lookagain-reviewer` agent.
-- Include in the prompt: pass number, target path, and instruction to output JSON.
-- Do NOT include findings from previous passes. The subagent must review independently.
-- WAIT for the subagent to complete before proceeding.
+Map the model argument to the Task tool model parameter:
 
-**Step 2 — Collect**: Parse the JSON findings from the subagent response.
-- Expected structure: `{ "issues": [{ "severity": "must_fix|should_fix|suggestion", "title": "...", "description": "...", "file": "...", "line": N, "suggested_fix": "..." }] }`
-- Store findings and track which pass found each issue.
+| Model value | Task model |
+|---|---|
+| `fast` | `haiku` |
+| `balanced` | `sonnet` |
+| `thorough` | (omit — inherits current model) |
 
-**Step 3 — Fix**: If auto-fix is enabled, apply fixes for `must_fix` issues NOW, before the next pass.
-- Make minimal code changes. Do not refactor.
-- Do NOT fix `should_fix` or `suggestion` items.
-- The next pass will review the code WITH these fixes applied.
+## Phase 1: Sequential Review Passes
 
-**Step 4 — Log and continue**: Log "Pass N complete. Found X must_fix, Y should_fix, Z suggestions." then proceed to the next pass.
+CRITICAL: Passes run in sequence, NOT in parallel. Each pass reviews code after previous fixes.
 
-After the configured passes, if `must_fix` issues remain and we haven't hit max-passes, run additional passes.
+For each pass (1 through N):
 
-### Phase 2: Aggregate Results
+**Review**: Spawn a fresh subagent via the Task tool using the `lookagain-reviewer` agent. Include: pass number, scope instruction, and instruction to use the `lookagain-output-format` skill. Set the model parameter based on the resolved model. Do NOT include findings from previous passes.
 
-After all passes complete:
+**Collect**: Parse the JSON response. Store findings and track which pass found each issue.
 
-1. **Deduplicate findings**
-   - Same issue found in multiple passes = higher confidence
-   - Key on (file, title) - issues with same file and title are duplicates
-   - Track which passes found each unique issue
+**Fix**: If auto-fix is enabled, apply fixes for `must_fix` issues only. Minimal changes, no refactoring.
 
-2. **Calculate confidence scores**
-   - Confidence = (passes that found this issue) / (total passes) * 100%
+**Log**: "Pass N complete. Found X must_fix, Y should_fix, Z suggestions."
 
-3. **Generate summary report**
-   - Group by severity
-   - Sort by confidence within each group
-   - Include file locations and suggested fixes
+After configured passes, if `must_fix` issues remain and passes < max-passes, run additional passes.
 
-### Phase 3: Save Results
+## Phase 2: Aggregate
 
-Save results to `.lookagain/` using the Write tool:
+1. **Deduplicate** on (file, title). Same issue across passes = higher confidence.
+2. **Score**: Confidence = (passes finding issue) / (total passes) x 100%.
+3. **Group** by severity, sort by confidence within groups.
 
-1. `pass-N.json` - Raw findings from each pass (save after each pass completes)
-2. `aggregate.json` - Machine-readable findings
-3. `aggregate.md` - Human-readable report
+## Phase 3: Save and Report
 
-### Output Format
+Save to `.lookagain/<run-id>/`:
+- `pass-N.json` after each pass
+- `aggregate.json` and `aggregate.md` after aggregation
 
-Present the final summary to the user:
+Present the final summary to the user in this format:
 
 ```
 ## Iterative Review Complete
@@ -97,7 +98,7 @@ Present the final summary to the user:
 
 | Issue | File | Confidence | Fixed |
 | ----- | ---- | ---------- | ----- |
-| ...   | ...  | ...%       | ✓/✗   |
+| ...   | ...  | ...%       | Yes/No |
 
 ### Should Fix (N issues)
 
@@ -111,19 +112,16 @@ Present the final summary to the user:
 | ----- | ---- | ---------- |
 | ...   | ...  | ...%       |
 
-Full report saved to `.lookagain/aggregate.md`
+Full report saved to `.lookagain/<run-id>/aggregate.md`
 ```
 
-## Important Rules
+Include the count of previous runs (glob `.lookagain/????-??-??T??-??-??/`, subtract 1). Mention `/look:tidy` if previous runs exist.
 
-1. **Sequential, not parallel**: NEVER launch multiple review passes at the same time. Each pass must complete and its fixes must be applied before starting the next pass.
+## Rules
 
-2. **Fresh context per pass**: Always use Task tool for subagents. Never try to "reset" context manually.
-
-3. **Subagent independence**: Do NOT tell subagents what previous passes found. The value is independent analysis on the current state of the code.
-
-4. **Minimal fixes**: When auto-fixing, change only what's necessary. Don't refactor.
-
-5. **Structured output**: Ensure subagent returns valid JSON. If parsing fails, log error and continue.
-
-6. **Respect max-passes**: Never exceed max-passes, even if must_fix issues remain.
+1. **Sequential**: Never launch passes in parallel. Each must complete before the next starts.
+2. **Fresh context**: Always use the Task tool for subagents.
+3. **Independence**: Never tell subagents what previous passes found.
+4. **Minimal fixes**: Only change what's necessary when auto-fixing.
+5. **Valid JSON**: If subagent output fails to parse, log the error and continue.
+6. **Respect max-passes**: Never exceed the limit.

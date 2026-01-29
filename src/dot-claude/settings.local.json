@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Write(.lookagain/**)"
+      "Write(.lookagain/**)",
+      "Bash(rm -rf .lookagain/????-??-??T??-??-??)"
     ]
   }
 }

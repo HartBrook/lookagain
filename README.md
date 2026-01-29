@@ -34,35 +34,64 @@ A single code review pass catches ~60-70% of issues. Running multiple independen
 ## Installation
 
 ```bash
-# Add the marketplace (if not already added)
+# Add the marketplace
 /plugin marketplace add HartBrook/lookagain
 
 # Install the plugin
-/plugin install lookagain
+/plugin install look@hartbrook-plugins
 ```
 
 ## Usage
 
 ```bash
-# Basic: 3 review passes with auto-fix for must_fix issues
+# Review staged changes (default)
 /look:again
+
+# Review the last commit
+/look:again target=commit
+
+# Review all changes on the current branch
+/look:again target=branch
+
+# Review a specific directory
+/look:again target=src/auth
 
 # More passes for critical code
 /look:again passes=5
 
-# Review specific directory
-/look:again target=src/auth
+# Use a faster, cheaper model for reviewers
+/look:again model=fast
+
+# Balanced cost/quality
+/look:again model=balanced
 
 # Disable auto-fix (review only)
 /look:again auto-fix=false
 
-# Increase max passes for stubborn issues
-/look:again passes=3 max-passes=10
+# Combine options
+/look:again target=branch passes=5 model=fast
 ```
+
+### Target Scopes
+
+| Target | What gets reviewed |
+| --- | --- |
+| `staged` (default) | Files in the git staging area |
+| `commit` | Files changed in the last commit |
+| `branch` | All changes on the current branch vs base |
+| `<path>` | Files in the given directory or path |
+
+### Model Options
+
+| Model | Engine | Best for |
+| --- | --- | --- |
+| `thorough` (default) | Inherits current model | Critical code, security-sensitive reviews |
+| `balanced` | Sonnet | Good balance of cost and quality |
+| `fast` | Haiku | Quick checks, large codebases, cost-conscious usage |
 
 ## How It Works
 
-1. **Pass 1**: Fresh subagent reviews code, outputs findings as JSON
+1. **Pass 1**: Fresh subagent reviews scoped changes, outputs findings as JSON
 2. **Fix**: Must-fix issues are automatically fixed (if auto-fix enabled)
 3. **Pass 2**: New fresh subagent reviews (doesn't know what Pass 1 found)
 4. **Fix**: Any new must-fix issues are fixed
@@ -74,20 +103,34 @@ Issues found by multiple passes have higher confidence scores.
 
 ## Output
 
-Results are saved to `.lookagain/`:
+Each run saves results to a timestamped directory `.lookagain/<run-id>/`:
 
 - `aggregate.md` - Human-readable summary
 - `aggregate.json` - Machine-readable findings
 - `pass-N.json` - Raw output from each pass
 
+Previous runs are preserved. Use `/look:tidy` to prune old results:
+
+```bash
+# Remove runs older than 1 day (default)
+/look:tidy
+
+# Keep last 3 days
+/look:tidy keep=3
+
+# Remove all runs
+/look:tidy all=true
+```
+
 ## Configuration
 
-Default behavior:
-
-- 3 review passes
-- Auto-fix must_fix issues
-- Maximum 7 passes if must_fix issues persist
-- Reviews current directory
+| Argument | Default | Description |
+| --- | --- | --- |
+| `passes` | `3` | Number of review passes |
+| `target` | `staged` | What to review: `staged`, `commit`, `branch`, or a path |
+| `auto-fix` | `true` | Auto-fix `must_fix` issues between passes |
+| `model` | `thorough` | Reviewer model: `fast`, `balanced`, `thorough` |
+| `max-passes` | `7` | Max passes if `must_fix` issues persist |
 
 ## Severity Levels
 
