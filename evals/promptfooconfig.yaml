@@ -1,0 +1,141 @@
+description: "Behavioral evals for lookagain prompt interpolation"
+
+prompts:
+  - file://prompt-loader.js
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-20250514
+    config:
+      max_tokens: 2048
+
+tests:
+  # ==================================================================
+  # again.md — auto-fix interpretation
+  # ==================================================================
+  - description: "auto-fix=true → model plans to apply fixes"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "3"
+      arg_target: staged
+      arg_auto-fix: "true"
+      arg_model: thorough
+      arg_max-passes: "7"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must clearly state that it will automatically fix
+          or apply fixes for must_fix issues between review passes.
+          It should NOT say it will skip fixing or leave fixes to the user.
+
+  - description: "auto-fix=false → model skips fixes"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "3"
+      arg_target: staged
+      arg_auto-fix: "false"
+      arg_model: thorough
+      arg_max-passes: "7"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must clearly state that auto-fix is disabled or false,
+          and that it will NOT automatically apply fixes between passes.
+          It should not describe applying any code fixes.
+
+  # ==================================================================
+  # again.md — passes count
+  # ==================================================================
+  - description: "passes=5 → model plans exactly 5 initial passes"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "5"
+      arg_target: staged
+      arg_auto-fix: "true"
+      arg_model: thorough
+      arg_max-passes: "7"
+    assert:
+      - type: icontains
+        value: "5"
+      - type: llm-rubric
+        value: >
+          The response must indicate it will run 5 review passes
+          (not 3, which is the default). It should plan for exactly
+          5 sequential passes before considering additional passes.
+
+  # ==================================================================
+  # again.md — model resolution
+  # ==================================================================
+  - description: "model=fast → reviewer uses haiku"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "3"
+      arg_target: staged
+      arg_auto-fix: "true"
+      arg_model: fast
+      arg_max-passes: "7"
+    assert:
+      - type: icontains
+        value: haiku
+      - type: llm-rubric
+        value: >
+          The response must indicate that the reviewer subagent model
+          will be set to haiku, since the model argument is "fast".
+
+  - description: "model=thorough → no explicit model override"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "3"
+      arg_target: staged
+      arg_auto-fix: "true"
+      arg_model: thorough
+      arg_max-passes: "7"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must indicate that for model=thorough, the model
+          parameter is omitted from the Task tool call (it inherits the
+          current model). It should NOT set the model to haiku or sonnet.
+
+  # ==================================================================
+  # again.md — scope resolution
+  # ==================================================================
+  - description: "target=branch → branch-based diff scope"
+    vars:
+      prompt_file: src/commands/again.md
+      arg_passes: "3"
+      arg_target: branch
+      arg_auto-fix: "true"
+      arg_model: thorough
+      arg_max-passes: "7"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must indicate that the scope is branch-based,
+          reviewing all changes on the current branch versus the base
+          branch. It should reference branch comparison or merge-base.
+
+  # ==================================================================
+  # tidy.md — all flag
+  # ==================================================================
+  - description: "all=true → removes all runs"
+    vars:
+      prompt_file: src/commands/tidy.md
+      arg_keep: "1"
+      arg_all: "true"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must state that ALL run directories will be removed,
+          regardless of date. It should not apply any date-based filtering.
+
+  - description: "all=false, keep=3 → date-based retention"
+    vars:
+      prompt_file: src/commands/tidy.md
+      arg_keep: "3"
+      arg_all: "false"
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must describe calculating a cutoff date by subtracting
+          3 days from today, and only removing runs older than that cutoff.
+          It should keep runs from the last 3 days.

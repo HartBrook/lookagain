@@ -15,6 +15,9 @@ dev: build ## Build and start Claude Code with plugin loaded
 	@echo ""
 	@claude --plugin-dir ./dist/lookagain
 
+eval: ## Run behavioral evals (requires ANTHROPIC_API_KEY)
+	@npx promptfoo@latest eval -c evals/promptfooconfig.yaml
+
 clean: ## Remove build artifacts
 	@rm -rf dist/
 	@echo "Cleaned dist/"

@@ -62,17 +62,17 @@ Map the model argument to the Task tool model parameter:
 
 CRITICAL: Passes run in sequence, NOT in parallel. Each pass reviews code after previous fixes.
 
-For each pass (1 through N):
+For each pass (1 through $ARGUMENTS.passes):
 
 **Review**: Spawn a fresh subagent via the Task tool using the `lookagain-reviewer` agent. Include: pass number, scope instruction, and instruction to use the `lookagain-output-format` skill. Set the model parameter based on the resolved model. Do NOT include findings from previous passes.
 
 **Collect**: Parse the JSON response. Store findings and track which pass found each issue.
 
-**Fix**: If auto-fix is enabled, apply fixes for `must_fix` issues only. Minimal changes, no refactoring.
+**Fix**: If `$ARGUMENTS.auto-fix` is `true`, apply fixes for `must_fix` issues only. Minimal changes, no refactoring.
 
 **Log**: "Pass N complete. Found X must_fix, Y should_fix, Z suggestions."
 
-After configured passes, if `must_fix` issues remain and passes < max-passes, run additional passes.
+After completing $ARGUMENTS.passes passes, if `must_fix` issues remain and total passes < $ARGUMENTS.max-passes, run additional passes.
 
 ## Phase 2: Aggregate
 
@@ -122,6 +122,6 @@ Include the count of previous runs (glob `.lookagain/????-??-??T??-??-??/`, subt
 1. **Sequential**: Never launch passes in parallel. Each must complete before the next starts.
 2. **Fresh context**: Always use the Task tool for subagents.
 3. **Independence**: Never tell subagents what previous passes found.
-4. **Minimal fixes**: Only change what's necessary when auto-fixing.
+4. **Minimal fixes**: Only change what's necessary when `$ARGUMENTS.auto-fix` is `true`.
 5. **Valid JSON**: If subagent output fails to parse, log the error and continue.
-6. **Respect max-passes**: Never exceed the limit.
+6. **Respect max-passes**: Never exceed $ARGUMENTS.max-passes.
