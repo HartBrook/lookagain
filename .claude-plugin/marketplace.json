@@ -11,7 +11,7 @@
       "name": "look",
       "source": "./src",
       "description": "Sequential code review with fresh agent contexts. Runs multiple independent review passes to catch more issues.",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "author": { "name": "HartBrook" },
       "repository": "https://github.com/HartBrook/lookagain",
       "license": "MIT",

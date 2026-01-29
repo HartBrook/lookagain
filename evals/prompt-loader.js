@@ -1,6 +1,7 @@
-// Loads a markdown command file, strips frontmatter, interpolates
-// $ARGUMENTS.* tokens with test-case variables, and prepends a
-// meta-instruction so the model describes its plan without executing.
+// Loads a markdown command file, strips frontmatter, replaces the
+// $ARGUMENTS placeholder with a key=value string built from test-case
+// variables, and prepends a meta-instruction so the model describes
+// its plan without executing.
 
 const fs = require("fs");
 const path = require("path");
@@ -18,18 +19,17 @@ function generatePrompt(context) {
   // Strip YAML frontmatter (between opening and closing ---)
   const stripped = raw.replace(/^---\n[\s\S]*?\n---\n/, "");
 
-  // Replace $ARGUMENTS.<name> with matching arg_<name> variable.
-  // Argument names may contain hyphens (e.g. auto-fix, max-passes).
-  const interpolated = stripped.replace(
-    /\$ARGUMENTS\.([\w-]+)/g,
-    (_match, name) => {
-      const key = `arg_${name}`;
-      if (key in vars) {
-        return vars[key];
-      }
-      return _match; // leave unresolved tokens as-is
-    },
-  );
+  // Build a key=value argument string from all vars prefixed with arg_.
+  // e.g. { arg_passes: "5", arg_auto-fix: "false" } → "passes=5 auto-fix=false"
+  const argPairs = Object.entries(vars)
+    .filter(([k]) => k.startsWith("arg_"))
+    .map(([k, v]) => `${k.slice(4)}=${v}`)
+    .join(" ");
+
+  // Replace the $ARGUMENTS placeholder with the built argument string.
+  // This mirrors what Claude Code does at runtime: $ARGUMENTS is replaced
+  // with the raw text the user typed after the command name.
+  const interpolated = stripped.replace(/\$ARGUMENTS/g, argPairs);
 
   const meta = [
     "You are analyzing a Claude Code plugin command prompt.",
