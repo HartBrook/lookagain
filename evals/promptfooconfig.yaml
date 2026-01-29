@@ -18,11 +18,12 @@ tests:
     assert:
       - type: llm-rubric
         value: >
-          The response must indicate that no arguments were provided (the
-          argument string is empty) and that it will use default values:
-          3 passes, staged target, auto-fix enabled (true), thorough model,
-          and max-passes of 7. It must describe applying fixes for must_fix
-          issues since auto-fix defaults to true.
+          The response must use default values for all settings since the
+          argument string is empty: 3 passes, staged target, auto-fix true,
+          thorough model, and max-passes 7. It must describe applying fixes
+          for must_fix issues (since auto-fix defaults to true). It should
+          NOT say arguments are missing or unavailable — an empty string
+          simply means the user wants all defaults.
 
   # ==================================================================
   # again.md — auto-fix interpretation
@@ -179,7 +180,9 @@ tests:
     assert:
       - type: llm-rubric
         value: >
-          The response must indicate that no arguments were provided and
-          it will use defaults: keep runs from the last 1 day, and do NOT
-          remove all runs. It should describe date-based filtering with a
-          1-day retention window.
+          The response must use default values since the argument string is
+          empty: keep=1 (keep runs from the last 1 day) and all=false (do
+          NOT remove all runs). It should describe date-based filtering
+          with a 1-day retention window. An empty argument string means
+          the user wants all defaults — it should NOT say arguments are
+          missing or unavailable.

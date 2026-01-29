@@ -13,9 +13,9 @@ You are cleaning up old review results from `.lookagain/`.
 
 The user may pass key=value pairs after the command name. The raw argument string is:
 
-$ARGUMENTS
+> $ARGUMENTS
 
-Parse the following settings from the argument string. For any key not provided, use the default.
+If the argument string is empty or blank, the user provided no overrides — use all defaults. Parse `key=value` pairs from the string. For any key not provided, use the default.
 
 | Key | Default | Description |
 |---|---|---|
