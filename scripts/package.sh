@@ -32,7 +32,6 @@ cp -r "$PROJECT_ROOT/src/dot-claude" "$DIST_DIR/lookagain/.claude"
 cp -r "$PROJECT_ROOT/src/dot-claude-plugin" "$DIST_DIR/lookagain/.claude-plugin"
 # Overlay marketplace.json from repo root into the dist .claude-plugin/ directory
 cp "$PROJECT_ROOT/.claude-plugin/marketplace.json" "$DIST_DIR/lookagain/.claude-plugin/"
-cp -r "$PROJECT_ROOT/src/commands" "$DIST_DIR/lookagain/commands"
 cp -r "$PROJECT_ROOT/src/agents" "$DIST_DIR/lookagain/agents"
 cp -r "$PROJECT_ROOT/src/skills" "$DIST_DIR/lookagain/skills"
 
