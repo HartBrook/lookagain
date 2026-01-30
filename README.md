@@ -12,7 +12,7 @@ A single code review pass catches ~60-70% of issues. Running multiple independen
 ┌─────────────────────────────────────────────────────┐
 │                   /look:again                       │
 │                                                     │
-│   ┌───────────────────────────────────────────┐    │
+│   ┌────────────────────────────────────────────┐    │
 │   │          Orchestrator (main agent)         │    │
 │   │                                            │    │
 │   │  For each pass:                            │    │
@@ -23,7 +23,7 @@ A single code review pass catches ~60-70% of issues. Running multiple independen
 │   │  After all passes:                         │    │
 │   │    - Deduplicate & score by confidence     │    │
 │   │    - Save to .lookagain/                   │    │
-│   └───────────────────────────────────────────┘    │
+│   └────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────┘
 ```
 
