@@ -161,6 +161,20 @@ make dev           # Build and start Claude Code with the plugin loaded
 
 Run `make test` before every commit (free, offline). Run `make eval` after changing prompt wording or argument handling. Run `make integration` after changes to the review pipeline or output format. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on what each layer catches.
 
+## Why Multiple Passes Work
+
+A natural question: why does a fresh pass find issues the previous one missed? It's not a single cause — several factors compound.
+
+**Stochastic sampling.** LLMs are probabilistic. Each run samples a different path through the reasoning space. One pass might focus on error handling, another on boundary conditions, another on security. The model *can* find any given issue, but on any single run the sampling path may not lead there. Multiple independent runs cover more of the distribution.
+
+**Context anchoring.** Once a reviewer commits to a line of analysis early in a pass, that reasoning occupies context and steers what it looks for next. If pass 1 spends its early tokens analyzing a race condition, it's primed to find more concurrency issues — not the SQL injection two files over. A fresh context has no such anchoring, so it approaches the code from a different angle.
+
+**Bugs mask bugs.** When auto-fix resolves a `must_fix` issue between passes, the next reviewer sees different code. A null dereference on line 12 can prevent the reviewer from reasoning clearly about the logic on lines 15–30 that depends on the same variable. Fix line 12, and the downstream issue becomes visible.
+
+**Finite output budget.** Each reviewer agent has a limited token budget for its response. A thorough review of a large diff can't enumerate every issue in one pass — it has to prioritize. Different passes prioritize differently due to sampling, so the union of findings is larger than any single pass.
+
+The key design decision is **independence**. If you asked the same agent to "look again" within the same context, it would anchor on its prior findings and mostly confirm them. Spawning a fresh subagent with no knowledge of earlier passes avoids this confirmation bias.
+
 ## License
 
 MIT
