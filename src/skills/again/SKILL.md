@@ -96,7 +96,7 @@ Save to `.lookagain/<run-id>/`:
 - `pass-N.json` after each pass
 - `aggregate.json` and `aggregate.md` after aggregation
 
-`aggregate.md` uses the same tables shown below (same columns, same global IDs). Keep `suggested_fix` text intact in the markdown file - do not truncate.
+`aggregate.md` uses the same tables shown below (same columns, same global IDs). Keep `suggested_fix` text intact in the markdown file - do not truncate. To preserve the table format, escape pipe characters as `\|` and replace embedded newlines with `<br>` (or single spaces) inside the `Suggested Fix` cell.
 
 Present the final summary to the user in this format:
 
@@ -110,21 +110,21 @@ Reference fixes by number (e.g. "apply fix 1, 3, 5").
 
 ### Must Fix (N issues)
 
-| # | Issue | File | Confidence | Suggested Fix | Fixed |
-| - | ----- | ---- | ---------- | ------------- | ----- |
-| 1 | ...   | ...  | ...%       | ...           | Yes/No |
+| #   | Issue | File | Confidence | Suggested Fix | Fixed |
+| --- | ----- | ---- | ---------- | ------------- | ----- |
+| 1   | ...   | ...  | ...%       | ...           | Yes/No |
 
 ### Should Fix (N issues)
 
-| # | Issue | File | Confidence | Suggested Fix |
-| - | ----- | ---- | ---------- | ------------- |
-| 4 | ...   | ...  | ...%       | ...           |
+| #   | Issue | File | Confidence | Suggested Fix |
+| --- | ----- | ---- | ---------- | ------------- |
+| 4   | ...   | ...  | ...%       | ...           |
 
 ### Suggestions (N issues)
 
-| # | Issue | File | Confidence | Suggested Fix |
-| - | ----- | ---- | ---------- | ------------- |
-| 7 | ...   | ...  | ...%       | ...           |
+| #   | Issue | File | Confidence | Suggested Fix |
+| --- | ----- | ---- | ---------- | ------------- |
+| 7   | ...   | ...  | ...%       | ...           |
 
 Full report saved to `.lookagain/<run-id>/aggregate.md`
 ```
