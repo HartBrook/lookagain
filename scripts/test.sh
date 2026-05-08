@@ -177,6 +177,78 @@ test_argument_handling() {
     done
 }
 
+test_again_numbering_format() {
+    # Verify the again skill documents the global-ID + Suggested Fix format
+    # added on feat/numbered-suggested-fixes. These checks catch regressions
+    # if a future edit removes the numbering scheme or the Suggested Fix
+    # column from the summary template.
+
+    local skill="$PROJECT_ROOT/src/skills/again/SKILL.md"
+    local relpath="src/skills/again/SKILL.md"
+
+    if [[ ! -f "$skill" ]]; then
+        fail "$relpath not found"
+        return
+    fi
+
+    local body
+    body=$(cat "$skill")
+
+    # Phase 2 must instruct global sequential numbering.
+    if echo "$body" | grep -qE "global sequential ID"; then
+        pass "$relpath: documents global sequential ID assignment"
+    else
+        fail "$relpath: missing 'global sequential ID' instruction in Phase 2"
+    fi
+
+    # Phase 2 must explain that IDs do not restart between severity tables.
+    if echo "$body" | grep -qE "numbering does not restart"; then
+        pass "$relpath: documents that numbering does not restart between tables"
+    else
+        fail "$relpath: missing 'numbering does not restart' clarification"
+    fi
+
+    # Phase 2 must store the assigned number on each issue as 'id'.
+    if echo "$body" | grep -qE "\`id\` field"; then
+        pass "$relpath: documents 'id' field on aggregated issues"
+    else
+        fail "$relpath: missing 'id' field documentation in Phase 2"
+    fi
+
+    # Each summary table must include a 'Suggested Fix' column.
+    local sf_count
+    sf_count=$(grep -c "Suggested Fix" "$skill" || true)
+    if [[ "$sf_count" -ge 3 ]]; then
+        pass "$relpath: 'Suggested Fix' column present in all 3 summary tables"
+    else
+        fail "$relpath: 'Suggested Fix' column missing (found $sf_count occurrences, need >= 3)"
+    fi
+
+    # Each summary table must include a '#' column for the global ID.
+    # The header row is '| #   | Issue | ...'; require at least 3 such headers.
+    local id_col_count
+    id_col_count=$(grep -cE '^\| #[[:space:]]*\| Issue' "$skill" || true)
+    if [[ "$id_col_count" -ge 3 ]]; then
+        pass "$relpath: '#' ID column present in all 3 summary tables"
+    else
+        fail "$relpath: '#' ID column missing (found $id_col_count, need >= 3)"
+    fi
+
+    # Truncation rule: conversation may collapse, but full text lives in aggregate.md.
+    if echo "$body" | grep -qE "full text always lives in"; then
+        pass "$relpath: documents that full Suggested Fix text lives in aggregate.md"
+    else
+        fail "$relpath: missing 'full text always lives in aggregate.md' rule"
+    fi
+
+    # Pipe/newline escaping rule for the Suggested Fix cell.
+    if echo "$body" | grep -qE "escape pipe characters"; then
+        pass "$relpath: documents pipe-escaping rule for Suggested Fix cell"
+    else
+        fail "$relpath: missing pipe-escaping rule for Suggested Fix cell"
+    fi
+}
+
 test_cross_references() {
     local pjson="$PROJECT_ROOT/src/dot-claude-plugin/plugin.json"
 
@@ -364,6 +436,10 @@ echo ""
 
 echo "--- argument handling ---"
 test_argument_handling
+echo ""
+
+echo "--- again numbering + Suggested Fix format ---"
+test_again_numbering_format
 echo ""
 
 echo "--- cross-references ---"

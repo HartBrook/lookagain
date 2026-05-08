@@ -88,7 +88,8 @@ After completing the configured number of passes, if `must_fix` issues remain an
 1. **Deduplicate** on (file, title). Same issue across passes = higher confidence.
 2. **Score**: Confidence = (passes finding issue) / (total passes) x 100%.
 3. **Group** by severity, sort by confidence within groups.
-4. **Number**: Assign a single global sequential ID (`1..N`) across all issues. Order: every `must_fix` first (in confidence-sorted order), then every `should_fix`, then every `suggestion`. The same ID identifies the issue in the conversation tables, in `aggregate.md`, and in `aggregate.json` (store as the `id` field on each issue). The user can reference fixes by these numbers (e.g. "apply fix 1, 3, 5").
+4. **Number**: Assign a single global sequential ID (`1..N`) across all issues. Order: every `must_fix` first (in confidence-sorted order), then every `should_fix`, then every `suggestion`. **Numbering is global and does NOT restart between the three severity tables** - if `must_fix` ends at ID k, `should_fix` starts at k+1, and `suggestions` continues from there. The same ID identifies the issue in the conversation tables, in `aggregate.md`, and in `aggregate.json` (store as the `id` field on each issue).
+5. **Reference by ID**: Because IDs are unique and global, the user can refer to specific fixes by number (e.g. "apply fix 1, 3, 5") to selectively apply or skip individual issues across any of the three tables. Tell the user this in the final summary.
 
 ## Phase 3: Save and Report
 
@@ -98,7 +99,7 @@ Save to `.lookagain/<run-id>/`:
 
 `aggregate.md` uses the same tables shown below (same columns, same global IDs). Keep `suggested_fix` text intact in the markdown file - do not truncate. To preserve the table format, escape pipe characters as `\|` and replace embedded newlines with `<br>` (or single spaces) inside the `Suggested Fix` cell.
 
-Present the final summary to the user in this format:
+Present the final summary to the user. The summary contains **three separate tables**, one for each severity (Must Fix, Should Fix, Suggestions), each with a `Suggested Fix` column and the global `#` ID column. Use this exact format:
 
 ```
 ## Iterative Review Complete
