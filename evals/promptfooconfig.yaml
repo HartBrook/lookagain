@@ -4,9 +4,9 @@ prompts:
   - file://prompt-loader.js
 
 providers:
-  - id: anthropic:messages:claude-sonnet-4-20250514
+  - id: anthropic:messages:claude-sonnet-4-6
     config:
-      max_tokens: 2048
+      max_tokens: 4096
 
 tests:
   # ==================================================================
@@ -144,6 +144,48 @@ tests:
           and use defaults for all other settings (3 passes, staged target,
           thorough model, max-passes 7). It must NOT apply any fixes since
           auto-fix is explicitly false.
+
+  # ==================================================================
+  # again — global sequential numbering + Suggested Fix column
+  # ==================================================================
+  - description: "summary tables include Suggested Fix column and global ID"
+    vars:
+      prompt_file: src/skills/again/SKILL.md
+    assert:
+      - type: icontains
+        value: "Suggested Fix"
+      - type: llm-rubric
+        value: >
+          The response must describe a final summary that includes three tables
+          (Must Fix, Should Fix, Suggestions), each containing a "Suggested Fix"
+          column and a global sequential ID column (often shown as "#"). It must
+          state that IDs are assigned once across all issues and DO NOT restart
+          between the three tables (e.g., must_fix uses 1..k, should_fix
+          continues at k+1, etc.). It must also state that the user can refer
+          to fixes by these IDs (e.g., "apply fix 1, 3, 5").
+
+  - description: "aggregate.md preserves full Suggested Fix text; conversation may truncate"
+    vars:
+      prompt_file: src/skills/again/SKILL.md
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must indicate that the full untruncated Suggested Fix
+          text is preserved in aggregate.md (and aggregate.json), while the
+          conversation-summary table is allowed to collapse very long Suggested
+          Fix text to a single line. It must NOT say the full text is dropped
+          or only kept in conversation.
+
+  - description: "must_fix table includes a Fixed column; should_fix and suggestions do not"
+    vars:
+      prompt_file: src/skills/again/SKILL.md
+    assert:
+      - type: llm-rubric
+        value: >
+          The response must describe the Must Fix table as having a "Fixed"
+          column (Yes/No), since auto-fix applies only to must_fix issues. The
+          Should Fix and Suggestions tables must NOT include a Fixed column —
+          they only have ID, Issue, File, Confidence, and Suggested Fix.
 
   # ==================================================================
   # tidy — all flag
