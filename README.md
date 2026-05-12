@@ -166,7 +166,13 @@ Checklist for cutting a release:
 6. Commit, push, open a PR against `main`.
 7. After merge, users update via the [Updating](#updating) steps above.
 
-See [CLAUDE.md](CLAUDE.md) for semver guidance and additional project-level notes.
+### Semver guidance
+
+- **Patch** (0.5.0 -> 0.5.1): bug fixes, doc-only changes, internal refactors.
+- **Minor** (0.5.0 -> 0.6.0): new arguments, new skills, new output fields, anything additive.
+- **Major** (0.x.0 -> 1.0.0): breaking changes to command names, argument names, or output contracts that downstream tooling parses.
+
+While the project is pre-1.0, breaking changes can also go in a minor bump — call them out in the CHANGELOG with a "Breaking:" prefix.
 
 ## Development
 
