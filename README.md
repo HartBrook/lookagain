@@ -150,6 +150,24 @@ To update to the latest version:
 /plugin install look@hartbrook-plugins
 ```
 
+## Releasing
+
+The marketplace tracks `main` of this repo - there are no git tags or GitHub releases. Bumping the version on `main` is what makes a new release visible to users.
+
+Checklist for cutting a release:
+
+1. Branch off `main`: `git checkout -b release/vX.Y.Z`
+2. Bump version in **both** manifest files (kept in sync, enforced by `make test`):
+   - `src/dot-claude-plugin/plugin.json` -> `"version"`
+   - `.claude-plugin/marketplace.json` -> `plugins[0].version`
+3. Add a `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` (Keep a Changelog format).
+4. Run `make test`. Fix anything it flags.
+5. (Recommended) `make eval` after prompt or argument-handling changes; `make integration` after orchestration or output-format changes. Both require `ANTHROPIC_API_KEY`.
+6. Commit, push, open a PR against `main`.
+7. After merge, users update via the [Updating](#updating) steps above.
+
+See [CLAUDE.md](CLAUDE.md) for semver guidance and additional project-level notes.
+
 ## Development
 
 ```bash
