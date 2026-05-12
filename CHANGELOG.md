@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-12
+
+### Added
+
+- Global sequential numbering across all severity sections in `/look:again` aggregate summary tables, so issues can be referenced by ID (e.g. "fix #3, #5") across must_fix/should_fix/suggestion groups.
+- "Suggested Fix" column in summary tables, providing a one-line fix preview alongside the existing detailed write-ups.
+- Static format regression tests in `scripts/test.sh` enforcing the new numbering and Suggested Fix output contract.
+- `.env` added to `.gitignore` so local `ANTHROPIC_API_KEY` files used for `make eval` / `make integration` cannot be committed accidentally.
+
+### Changed
+
+- Bumped promptfoo eval `max_tokens` to 4096 so reviewer outputs are not truncated mid-JSON for larger diffs.
+- `/look:again` orchestrator and reviewer prompts updated to emphasize the global ID rules so passes produce stable, parseable output.
+- Pipe and newline characters in Suggested Fix cells are now escaped so the markdown tables render correctly.
+
 ## [0.4.0] - 2026-01-29
 
 ### Changed
