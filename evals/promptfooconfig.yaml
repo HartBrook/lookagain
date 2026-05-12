@@ -14,7 +14,7 @@ tests:
   # ==================================================================
   - description: "no arguments → model uses all defaults (auto-fix=true, passes=3, thorough)"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
     assert:
       - type: llm-rubric
         value: >
@@ -30,7 +30,7 @@ tests:
   # ==================================================================
   - description: "auto-fix=true → model plans to apply fixes"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -45,7 +45,7 @@ tests:
 
   - description: "auto-fix=false → model skips fixes"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "false"
@@ -63,7 +63,7 @@ tests:
   # ==================================================================
   - description: "passes=5 → model plans exactly 5 initial passes"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "5"
       arg_target: staged
       arg_auto-fix: "true"
@@ -83,7 +83,7 @@ tests:
   # ==================================================================
   - description: "model=fast → reviewer uses haiku"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -99,7 +99,7 @@ tests:
 
   - description: "model=thorough → no explicit model override"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "3"
       arg_target: staged
       arg_auto-fix: "true"
@@ -117,7 +117,7 @@ tests:
   # ==================================================================
   - description: "target=branch → branch-based diff scope"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_passes: "3"
       arg_target: branch
       arg_auto-fix: "true"
@@ -135,7 +135,7 @@ tests:
   # ==================================================================
   - description: "only auto-fix=false → defaults for everything else, no fixing"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
       arg_auto-fix: "false"
     assert:
       - type: llm-rubric
@@ -150,7 +150,7 @@ tests:
   # ==================================================================
   - description: "summary tables include Suggested Fix column and global ID"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
     assert:
       - type: icontains
         value: "Suggested Fix"
@@ -166,7 +166,7 @@ tests:
 
   - description: "aggregate.md preserves full Suggested Fix text; conversation may truncate"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
     assert:
       - type: llm-rubric
         value: >
@@ -178,7 +178,7 @@ tests:
 
   - description: "must_fix table includes a Fixed column; should_fix and suggestions do not"
     vars:
-      prompt_file: src/skills/again/SKILL.md
+      prompt_file: src/commands/again.md
     assert:
       - type: llm-rubric
         value: >
@@ -192,7 +192,7 @@ tests:
   # ==================================================================
   - description: "all=true → removes all runs"
     vars:
-      prompt_file: src/skills/tidy/SKILL.md
+      prompt_file: src/commands/tidy.md
       arg_keep: "1"
       arg_all: "true"
     assert:
@@ -203,7 +203,7 @@ tests:
 
   - description: "all=false, keep=3 → date-based retention"
     vars:
-      prompt_file: src/skills/tidy/SKILL.md
+      prompt_file: src/commands/tidy.md
       arg_keep: "3"
       arg_all: "false"
     assert:
@@ -218,7 +218,7 @@ tests:
   # ==================================================================
   - description: "tidy with no arguments → keep=1, all=false"
     vars:
-      prompt_file: src/skills/tidy/SKILL.md
+      prompt_file: src/commands/tidy.md
     assert:
       - type: llm-rubric
         value: >

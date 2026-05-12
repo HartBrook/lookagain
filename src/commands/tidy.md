@@ -1,7 +1,5 @@
 ---
-name: tidy
 description: Remove old lookagain review runs, keeping today's results by default
-disable-model-invocation: true
 allowed-tools: Glob, Bash(rm -rf .lookagain/????-??-??T??-??-??)
 argument-hint: "[key=value ...]"
 ---

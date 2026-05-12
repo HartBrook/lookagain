@@ -123,25 +123,28 @@ You can also test the plugin through the marketplace install flow, which is clos
 
 ### Key Files
 
-- **[src/skills/again/SKILL.md](src/skills/again/SKILL.md)**: Main orchestrator logic. Controls pass execution, auto-fixing, and aggregation.
-- **[src/skills/tidy/SKILL.md](src/skills/tidy/SKILL.md)**: Tidy skill for pruning old review runs.
+- **[src/commands/again.md](src/commands/again.md)**: Main orchestrator logic. Controls pass execution, auto-fixing, and aggregation.
+- **[src/commands/tidy.md](src/commands/tidy.md)**: Tidy command for pruning old review runs.
 - **[src/agents/lookagain-reviewer.md](src/agents/lookagain-reviewer.md)**: Reviewer subagent. Defines how individual review passes work.
-- **[src/skills/lookagain-output-format/SKILL.md](src/skills/lookagain-output-format/SKILL.md)**: JSON output format specification.
+- **[src/skills/lookagain-output-format/SKILL.md](src/skills/lookagain-output-format/SKILL.md)**: JSON output format specification (invoked by the reviewer subagent via the Skill tool).
 - **[src/dot-claude-plugin/plugin.json](src/dot-claude-plugin/plugin.json)**: Plugin metadata and version.
 - **[.claude-plugin/marketplace.json](.claude-plugin/marketplace.json)**: Marketplace manifest for plugin discovery and installation.
 
-### Writing Skill Prompts
+### Writing Command Prompts
 
-When editing or adding skills in `src/skills/`:
+When editing or adding commands in `src/commands/`:
 
-- Each skill is a directory containing a `SKILL.md` file (e.g., `src/skills/again/SKILL.md`).
-- **Use `$ARGUMENTS` for the raw string.** Claude Code replaces `$ARGUMENTS` with whatever the user typed after the skill name. There is no `$ARGUMENTS.name` dot-access syntax — only `$ARGUMENTS` (whole string) and `$ARGUMENTS[N]` (positional). Do NOT use an `arguments:` array in frontmatter — it is not a supported Claude Code feature and will not be interpolated.
+- Each command is a single `.md` file (e.g., `src/commands/again.md`). The slash name is derived from the filename, so `again.md` becomes `/look:again`. Do not add a `name:` field to the frontmatter - that historically caused cross-plugin name collisions (see CHANGELOG 0.5.1).
+- **Use `$ARGUMENTS` for the raw string.** Claude Code replaces `$ARGUMENTS` with whatever the user typed after the command. There is no `$ARGUMENTS.name` dot-access syntax - only `$ARGUMENTS` (whole string) and `$ARGUMENTS[N]` (positional). Do NOT use an `arguments:` array in frontmatter - it is not a supported Claude Code feature and will not be interpolated.
 - **Add `argument-hint`** in frontmatter to document expected input format (e.g., `argument-hint: "[key=value ...]"`).
-- **Add `disable-model-invocation: true`** for user-triggered actions to prevent Claude from auto-invoking them.
 - **Include a defaults table** in the body listing each key, its default, and a description. Instruct the agent to parse `key=value` pairs from `$ARGUMENTS` and fall back to defaults for missing keys.
 - **Log the resolved configuration** so it is visible in output and reviewable in evals.
-- `make test` enforces that skills using `$ARGUMENTS` have `argument-hint` in frontmatter, a defaults table in the body, and do NOT use the unsupported `arguments:` frontmatter array.
+- `make test` enforces that commands using `$ARGUMENTS` have `argument-hint` in frontmatter, a defaults table in the body, and do NOT use the unsupported `arguments:` frontmatter array.
 - After changing prompt logic, run `make eval` to verify models still interpret the arguments correctly.
+
+### Writing Skill Prompts
+
+`src/skills/` is reserved for skills invoked by other components via the Skill tool (currently only `lookagain-output-format`, which the reviewer subagent calls to get the JSON output spec). Skills are not user-invokable slash commands; if you need a new user-facing slash command, add it under `src/commands/` instead.
 
 ## Pull Requests
 
