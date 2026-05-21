@@ -82,7 +82,7 @@ test_plugin_json() {
     fi
 
     # Required fields
-    for field in name version description author agents skills; do
+    for field in name version description author commands agents skills; do
         check_json_field "$pjson" "$field"
     done
 
@@ -111,8 +111,8 @@ sys.exit(0 if isinstance(d.get('author'), dict) and 'name' in d['author'] else 1
 
 test_required_files() {
     check_file "src/dot-claude-plugin/plugin.json"
-    check_file "src/skills/again/SKILL.md"
-    check_file "src/skills/tidy/SKILL.md"
+    check_file "src/commands/again.md"
+    check_file "src/commands/tidy.md"
     check_file "src/agents/lookagain-reviewer.md"
     check_file "src/skills/lookagain-output-format/SKILL.md"
     check_file "src/dot-claude/settings.local.json"
@@ -123,21 +123,22 @@ test_required_files() {
 }
 
 test_frontmatter() {
-    check_frontmatter "$PROJECT_ROOT/src/skills/again/SKILL.md" name description
-    check_frontmatter "$PROJECT_ROOT/src/skills/tidy/SKILL.md" name description
+    # Commands derive their name from the filename, so only description is required.
+    check_frontmatter "$PROJECT_ROOT/src/commands/again.md" description
+    check_frontmatter "$PROJECT_ROOT/src/commands/tidy.md" description
     check_frontmatter "$PROJECT_ROOT/src/agents/lookagain-reviewer.md" name description tools
     check_frontmatter "$PROJECT_ROOT/src/skills/lookagain-output-format/SKILL.md" name description
 }
 
 test_argument_handling() {
-    # Verify that skill files using arguments follow the correct pattern:
+    # Verify that command and skill files using arguments follow the correct pattern:
     # 1. Frontmatter has argument-hint (not the unsupported arguments: array)
     # 2. Body contains $ARGUMENTS placeholder for the raw argument string
     # 3. Body contains a defaults table with Key/Default columns
     # This ensures the agent receives and parses arguments at runtime
     # rather than relying on non-existent compile-time interpolation.
 
-    for file in "$PROJECT_ROOT"/src/skills/*/SKILL.md; do
+    for file in "$PROJECT_ROOT"/src/commands/*.md "$PROJECT_ROOT"/src/skills/*/SKILL.md; do
         local relpath="${file#"$PROJECT_ROOT"/}"
 
         local frontmatter
@@ -178,13 +179,13 @@ test_argument_handling() {
 }
 
 test_again_numbering_format() {
-    # Verify the again skill documents the global-ID + Suggested Fix format
+    # Verify the again command documents the global-ID + Suggested Fix format
     # added on feat/numbered-suggested-fixes. These checks catch regressions
     # if a future edit removes the numbering scheme or the Suggested Fix
     # column from the summary template.
 
-    local skill="$PROJECT_ROOT/src/skills/again/SKILL.md"
-    local relpath="src/skills/again/SKILL.md"
+    local skill="$PROJECT_ROOT/src/commands/again.md"
+    local relpath="src/commands/again.md"
 
     if [[ ! -f "$skill" ]]; then
         fail "$relpath not found"
@@ -252,6 +253,16 @@ test_again_numbering_format() {
 test_cross_references() {
     local pjson="$PROJECT_ROOT/src/dot-claude-plugin/plugin.json"
 
+    # Commands resolve as files
+    while IFS= read -r cmd; do
+        local resolved="$PROJECT_ROOT/src/${cmd#./}"
+        if [[ -f "$resolved" ]]; then
+            pass "command $cmd resolves"
+        else
+            fail "command $cmd not found at src/${cmd#./}"
+        fi
+    done < <(python3 -c "import json,sys; [print(c) for c in json.load(open(sys.argv[1])).get('commands', [])]" "$pjson")
+
     # Agents resolve
     while IFS= read -r agent; do
         local resolved="$PROJECT_ROOT/src/${agent#./}"
@@ -305,7 +316,7 @@ test_build() {
         fail "dist marketplace.json is invalid"
     fi
 
-    for f in agents/lookagain-reviewer.md skills/again/SKILL.md skills/tidy/SKILL.md skills/lookagain-output-format/SKILL.md README.md; do
+    for f in agents/lookagain-reviewer.md commands/again.md commands/tidy.md skills/lookagain-output-format/SKILL.md README.md; do
         if [[ -f "$dist/$f" ]]; then
             pass "dist/$f exists"
         else
@@ -401,7 +412,7 @@ sys.exit(0 if pv == mv else 1)
     fi
 
     # Commands, agents, skills match plugin.json
-    for field in agents skills; do
+    for field in commands agents skills; do
         if python3 -c "
 import json, sys
 p = sorted(json.load(open(sys.argv[1])).get(sys.argv[3], []))

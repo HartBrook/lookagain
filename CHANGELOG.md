@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-05-12
+
+### Changed
+
+- Migrated `/look:again` and `/look:tidy` back from the `skills/` directory format to the `commands/` directory format so they appear under the `/look:` namespace in the slash command picker (matching the README) and surface their description chip when typed. The underlying multi-command misrouting bug that motivated the 0.4.0 migration was fixed upstream in Claude Code 2.1.101 (release notes: "Fixed several plugin issues: slash commands resolving to the wrong plugin with duplicate `name:` frontmatter ..."), so the workaround is no longer needed. As a defense-in-depth measure, the `name:` frontmatter field is now omitted from both command files - the slash name is derived from the filename, which removes any possibility of a duplicate-name collision regardless of the resolver version.
+- The `lookagain-output-format` skill remains under `src/skills/` because the reviewer subagent invokes it via the Skill tool; it is not a user-facing slash command and would break if moved to `commands/`.
+- Updated `scripts/test.sh`, `scripts/package.sh`, `evals/promptfooconfig.yaml`, and `CONTRIBUTING.md` to reflect the new file layout.
+
 ## [0.5.0] - 2026-05-12
 
 ### Added
